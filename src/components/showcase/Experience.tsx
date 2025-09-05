@@ -10,6 +10,45 @@ const Experience: React.FC<ExperienceProps> = () => {
             <div style={styles.headerContainer}>
                 <div style={styles.header}>
                     <div style={styles.headerRow}>
+                        <h1>Wealthsimple</h1>
+                        <a
+                            rel="noreferrer"
+                            target="_blank"
+                            href={'https://www.wealthsimple.com'}
+                        >
+                            <h4>www.wealthsimple.com</h4>
+                        </a>
+                    </div>
+                    <div style={styles.headerRow}>
+                        <h3>Software Developer II</h3>
+                        <b>
+                            <p></p>
+                        </b>
+                    </div>
+                </div>
+            </div>
+            <div className="text-block">
+                <p>
+                    Software Developer II, Wealthsimple (May 2025 - Present)
+                </p>
+                <br />
+                <ul>
+                    <li>
+                        <p>
+                            Building scalable fintech solutions to democratize access to financial services.
+                        </p>
+                    </li>
+                    <li>
+                        <p>
+                            Developing front-end applications using React and back-end services with Ruby on Rails.
+                        </p>
+                    </li>
+                </ul>
+            </div>
+
+            <div style={styles.headerContainer}>
+                <div style={styles.header}>
+                    <div style={styles.headerRow}>
                         <h1>Shopify</h1>
                         <a
                             rel="noreferrer"
@@ -29,7 +68,7 @@ const Experience: React.FC<ExperienceProps> = () => {
             </div>
             <div className="text-block">
                 <p>
-                    Software Engineer, Shopify - Merchant Services, Shipping (June 2022 - Present)
+                    Software Engineer, Shopify - Merchant Services, Shipping (June 2022 - May 2025)
                 </p>
                 <br />
                 <ul>
@@ -48,7 +87,7 @@ const Experience: React.FC<ExperienceProps> = () => {
                     <li>
                         <p>
                             Bolstered data security for merchants by
-                            developing and sihpping authenticated GraphQL
+                            developing and shipping authenticated GraphQL
                             APIs.
                         </p>
                     </li>
