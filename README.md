@@ -33,3 +33,7 @@ Your feedback is greatly appreciated! If you have any suggestions or find any is
 ### 📜 License
 The content of this portfolio is currently not under any specific license.
 
+## 💻 Contributing 
+To run the project run 
+`npm install`
+`npm start`
