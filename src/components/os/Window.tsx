@@ -8,6 +8,7 @@ import DragIndicator from './DragIndicator';
 import ResizeIndicator from './ResizeIndicator';
 
 export interface WindowProps {
+    children?: React.ReactNode;
     closeWindow: () => void;
     minimizeWindow: () => void;
     onInteract: () => void;
