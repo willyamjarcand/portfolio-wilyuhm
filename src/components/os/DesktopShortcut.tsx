@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { IconName } from '../../assets/icons';
+import getIconByName, { IconName } from '../../assets/icons';
 import colors from '../../constants/colors';
 import { Icon } from '../general';
 
@@ -23,7 +23,7 @@ const DesktopShortcut: React.FC<DesktopShortcutProps> = ({
 
     const [scaledStyle, setScaledStyle] = useState({});
 
-    const requiredIcon = require(`../../assets/icons/${icon}.png`);
+    const requiredIcon = getIconByName(icon) as unknown as string;
     const [doubleClickTimerActive, setDoubleClickTimerActive] = useState(false);
 
     const getShortcutId = useCallback(() => {
@@ -158,6 +158,10 @@ const styles: StyleSheetCSS = {
     iconContainer: {
         cursor: 'pointer',
         paddingBottom: 3,
+    },
+    icon: {
+        width: 32,
+        height: 32,
     },
     iconOverlay: {
         position: 'absolute',

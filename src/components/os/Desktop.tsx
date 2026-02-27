@@ -55,7 +55,7 @@ const APPLICATIONS: {
     blog: {
         key: 'blog',
         name: 'Blog',
-        shortcutIcon: 'blogIcon',
+        shortcutIcon: 'directoryClosed',
         component: BlogExplorer,
     },
 };

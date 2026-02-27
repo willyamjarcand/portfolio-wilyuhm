@@ -1,15 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Window from '../os/Window';
 import BlogFileTree, { PostMeta } from '../blog/BlogFileTree';
 import BlogPostViewer from '../blog/BlogPostViewer';
-import useInitialWindowSize from '../../hooks/useInitialWindowSize';
 
-const BlogExplorer: React.FC<WindowAppProps> = (props) => {
-    const { initWidth, initHeight } = useInitialWindowSize({ margin: 100 });
-
+const Blog: React.FC = () => {
     const [manifest, setManifest] = useState<PostMeta[]>([]);
-    const [manifestError, setManifestError] = useState<string | null>(null);
-
     const [selected, setSelected] = useState<PostMeta | null>(null);
     const [postContent, setPostContent] = useState<string | null>(null);
     const [postLoading, setPostLoading] = useState(false);
@@ -23,7 +17,7 @@ const BlogExplorer: React.FC<WindowAppProps> = (props) => {
                 return r.json();
             })
             .then((data: PostMeta[]) => setManifest(data))
-            .catch((e) => setManifestError(e.message));
+            .catch(() => {});
     }, []);
 
     const handleSelect = (post: PostMeta) => {
@@ -50,53 +44,28 @@ const BlogExplorer: React.FC<WindowAppProps> = (props) => {
     };
 
     return (
-        <Window
-            top={24}
-            left={56}
-            width={initWidth}
-            height={initHeight}
-            windowTitle="Blog"
-            windowBarIcon="directoryClosed"
-            closeWindow={props.onClose}
-            onInteract={props.onInteract}
-            minimizeWindow={props.onMinimize}
-            bottomLeftText={'wilyuhm.dev'}
-        >
-            <div style={styles.container}>
-                {manifestError ? (
-                    <p style={styles.manifestError}>{manifestError}</p>
-                ) : (
-                    <>
-                        <BlogFileTree
-                            manifest={manifest}
-                            selected={selected}
-                            onSelect={handleSelect}
-                        />
-                        <BlogPostViewer
-                            content={postContent}
-                            loading={postLoading}
-                            error={postError}
-                        />
-                    </>
-                )}
-            </div>
-        </Window>
+        <div style={styles.page}>
+            <BlogFileTree
+                manifest={manifest}
+                selected={selected}
+                onSelect={handleSelect}
+            />
+            <BlogPostViewer
+                content={postContent}
+                loading={postLoading}
+                error={postError}
+            />
+        </div>
     );
 };
 
 const styles: StyleSheetCSS = {
-    container: {
-        display: 'flex',
+    page: {
         flexDirection: 'row',
-        width: '100%',
+        marginLeft: 300,
         height: '100%',
         overflow: 'hidden',
     },
-    manifestError: {
-        color: 'red',
-        padding: 16,
-        fontSize: 12,
-    },
 };
 
-export default BlogExplorer;
+export default Blog;
