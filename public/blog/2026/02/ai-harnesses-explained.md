@@ -1,89 +1,137 @@
 # AI Harnesses: The Layer That Makes Agents Actually Work
 
-There's a misconception I keep running into: people think when they use Claude Code or Copilot or whatever, they're basically just talking to a model with a nicer UI. The model is the product. Everything else is decoration.
+Most explanations of AI agents start from the top: here's what Claude Code does, here's the agentic loop, here are the tools. That's fine if you just want to use it. But if you want to understand why it works, and more importantly why it breaks, you need to start from the bottom.
 
-That's not really how it works.
+So let's start from the bottom.
 
-## The model can't do much on its own
+## What a model actually is
 
-A raw LLM does one thing. Given some text, predict what comes next. That's it. It can't read your files. It can't run your tests. It has no idea what you told it last Tuesday. On its own, it's genuinely not that useful.
+A language model is a function. You give it a sequence of tokens, it gives you a probability distribution over what token comes next.
 
-What makes these tools actually work is the layer sitting on top of the model, usually called a harness (or scaffolding, or agentic framework, the naming isn't consistent). The harness is what gives the model eyes, hands, and memory.
+```
+f(t₁, t₂, ..., tₙ) → P(tₙ₊₁)
+```
 
-Three things specifically:
-
-- **Tools:** file reads, shell execution, API calls, web search. Without these, the model can only produce text. With them, it can actually do things.
-- **Context management:** models have a finite context window, so something has to decide what goes in it. The harness handles that: what to load, what to summarize, what to fetch on demand.
-- **An execution loop:** instead of one prompt, one response, the harness lets the model plan, act, check what happened, and decide what to do next. That's the difference between a chatbot and an agent.
-
-## Claude Code is a good example
-
-I've been using Claude Code a lot lately, and it makes the model vs. harness distinction really obvious.
-
-The Claude Sonnet model in my terminal is the exact same model as the one in the claude.ai chat. Same weights, same training. But the experience is completely different.
-
-Ask the web interface to find a bug in your auth middleware and it'll ask you to paste the code, tell you what's wrong, and write a fix. Then you go copy it, drop it in the right file, run the tests, come back with the results. You're doing all the legwork.
-
-Claude Code just... does it. Greps the codebase, finds the file, reads the dependencies, makes the edit, runs the tests, reads the failure if it breaks, adjusts, tries again. I've watched it loop through a fix four or five times on its own before getting it right.
-
-Same model. The harness is doing the heavy lifting.
-
-## The loop
-
-The way Claude Code's harness actually works is a three-phase loop it runs through for every task:
+To generate text, you sample a token from that distribution, append it to the sequence, and call the function again. Repeat until you hit a stop token or a length limit.
 
 ```mermaid
 flowchart LR
-    A[Gather context] --> B[Take action]
-    B --> C[Verify]
-    C -->|failed| A
-    C -->|passed| D[Done]
+    A[token sequence] --> B[model forward pass]
+    B --> C[probability distribution]
+    C -->|sample| D[next token]
+    D -->|append| A
 ```
 
-**Gather context:** searches the project, reads relevant files, figures out what it's dealing with. No manual setup from me.
+Two things follow directly from this model.
 
-**Take action:** edits files, runs commands, whatever the task needs. Each action is a tool call the harness routes to my local system.
+**The function is stateless.** There is no hidden state carried between calls. What looks like memory is just the sequence getting longer. Every turn of a conversation, every instruction, every result — it all gets concatenated into one flat token sequence and fed in from scratch on every call.
 
-**Verify:** runs tests, reads output, checks if it worked. If it didn't, loops back.
+**The function has no side effects.** It takes tokens in and returns a distribution over the next token. It cannot read a file. It cannot run a test. It cannot call an API. It produces tokens. Nothing else.
 
-What I find interesting is that Claude decides what each phase needs based on what came out of the last one. A simple task might go through once. A gnarly refactor might loop a dozen times. The harness is what makes that iteration possible at all.
+This is the foundation everything else builds on.
 
-## Tools
+## Tool calls are structured text
 
-The built-in tool set is straightforward:
+So how does a model "call a tool"? It doesn't. Not directly.
 
-- `Glob`, `Grep`, `Read` for finding and reading files
-- `Write` and `Edit` for making changes
-- `Bash` for everything else (tests, git, package installs, whatever)
+What it does is produce text that looks like a tool call:
 
-The `Bash` tool is the one that surprised me most when I first used it. It's not sandboxed in any interesting way, if you tell it to, it'll just run things. That's powerful and also why the permission model matters.
+```json
+{
+  "tool": "read_file",
+  "path": "src/auth/middleware.ts"
+}
+```
 
-## Sub-agents
+The model learned to produce outputs like this during training. It was reinforced for emitting structured tool calls when doing so led to better task completion downstream. The model itself isn't running anything — it's outputting tokens. The thing that parses that output and actually runs the tool is the harness.
 
-One thing I didn't expect: Claude Code can spawn other instances of itself to work on subtasks.
+This distinction matters. The model has no privileged access to your filesystem or shell. It just knows that outputting a certain structure tends to be followed (in training) by a result appearing in the sequence. It learned the pattern. The harness is what makes the pattern real.
 
-The main practical reason is context. Context windows fill up fast on big tasks (file contents, command outputs, back-and-forth). If I'm in the middle of a refactor and need Claude to also research something or review a separate file, spinning that off into a sub-agent keeps the main context from getting polluted. The sub-agent does its thing, summarizes the findings, and returns them.
+## The execution loop
 
-The other reason is parallelism. Need to research something, write tests, and document a new feature? Three sub-agents, running at the same time.
+Here's the core of how an agentic system works:
 
-You can define your own sub-agent types with custom tool access and instructions. I haven't gone deep on this yet but the primitives are there.
+```mermaid
+sequenceDiagram
+    participant H as Harness
+    participant M as Model
+    participant T as Tools
+    H->>M: token sequence
+    M->>H: completion
+    alt tool call
+        H->>T: execute
+        T->>H: result
+        H->>M: append result, call again
+    else final response
+        H->>H: done
+    end
+```
 
-## Skills and everything else
+The harness manages the loop. It builds the token sequence, calls the model, parses the output, and decides what happens next. If the output contains a tool call, it runs the tool, appends the result to the sequence, and calls the model again. If the output is a final response, it exits.
 
-Skills are markdown files that tell Claude how to approach specific types of tasks. The harness matches your request against available skill descriptions and loads the relevant instructions into context on demand. Lazy loading, basically. You can also run a skill in an isolated sub-agent so it doesn't touch your main context at all.
+A chatbot runs this loop once. An agent runs it until the task is done or it gives up.
 
-A few other things in the ecosystem worth knowing:
+Everything Claude Code does — grep the codebase, read a file, run tests, read the failure, edit the file, run tests again — is this loop iterating. Each tool result is appended to the sequence. On every subsequent call, the model sees the full history: what it tried, what happened, where things stand now. The model isn't reasoning across time. It's reasoning over an ever-growing token sequence that contains its own prior actions.
 
-**CLAUDE.md** sits at your project root and gets loaded every session. I use it for the stuff that's always true: which test command to run, conventions I don't want to repeat, that sort of thing.
+## Context management is a hard constraint
 
-**Hooks** are event triggers you can attach to specific moments in the loop. I have one that pings me when Claude's waiting on input.
+Every call to the model has to fit inside a finite context window. Typically 128k to 200k tokens right now. That sounds like a lot until you're loading large source files, multiple rounds of tool output, error logs, and a long conversation history simultaneously.
 
-**MCP** (Model Context Protocol) is an open standard for connecting the agent to external services. GitHub, Slack, databases, anything that implements it becomes a tool Claude can use.
+The window fills up. When it does, something has to give.
 
-**Plugins** bundle all of the above into installable packages. Install one, get a whole set of skills, sub-agents, and MCP connections.
+Good harnesses make active decisions about what goes in the window:
 
-## Why I care about this distinction
+- **What to load upfront:** project structure, relevant files, the task description
+- **What to drop:** old turns, verbose outputs that already served their purpose
+- **What to compress:** summarize long tool outputs instead of including them verbatim
+- **What to fetch on demand:** retrieve content when it becomes relevant rather than preloading everything
 
-Honestly I think a lot of the "AI is overhyped" takes come from people who've only used the raw model. A chat interface with a smart model is useful but limited. The same model wrapped in a well-built harness that can read your codebase, run your tests, and iterate on failures is a different thing entirely.
+The naive approach is to put everything in and hope it fits. This fails on any non-trivial task. Context management is one of the harder problems in building a reliable harness, and it's where a lot of production agent failures come from — not model quality, but the wrong things being in (or out of) the window at the wrong time.
+
+## Sub-agents are nested loops
+
+A sub-agent is the same execution loop running inside another loop.
+
+The parent harness spawns a child with its own context window, its own system prompt, and possibly a restricted tool set. The child runs its task to completion and returns a result. The parent appends that result to its own sequence and continues.
+
+```mermaid
+flowchart TD
+    P[parent loop] -->|spawn| C1[sub-agent: research]
+    P -->|spawn| C2[sub-agent: write tests]
+    P -->|spawn| C3[sub-agent: update docs]
+    C1 -->|summary| P
+    C2 -->|summary| P
+    C3 -->|summary| P
+```
+
+Two practical benefits fall out of this structure.
+
+**Context isolation.** Each sub-agent has its own window. If you're deep in a refactor and need to research a separate part of the codebase, spinning that off as a sub-agent keeps the research from eating into the refactor's context budget. The parent gets back a summary, not the full transcript.
+
+**Parallelism.** Sub-agents can run concurrently. Three independent tasks run in three loops at the same time. The parent waits for all three, collects the results, and continues.
+
+The tradeoff is cost: each sub-agent is its own set of model calls. And coordination gets harder as the task graph deepens. But for the right problems — exploratory research, parallel file editing, isolated reviews — the structure pays off.
+
+## Why Claude Code feels different from the chat interface
+
+The Claude Sonnet model at claude.ai and the one in my terminal are identical. Same weights, same training. The experience is completely different because the harness is completely different.
+
+The chat interface runs the loop once. Prompt in, response out. If you ask it to find a bug in your auth middleware, it asks you to paste the code, tells you what's wrong, and writes a fix. Then you go copy it, drop it in the right file, run the tests, come back with the results. The legwork is yours.
+
+Claude Code runs the loop until the task is done. It greps the codebase, reads the relevant files, makes the edit, runs the tests, reads the failure if it breaks, adjusts, tries again. I've watched it loop through a fix five or six times before getting it right. The model isn't smarter — it just has the full history of its own actions in context, and the harness keeps feeding it back in.
+
+Same model. Different loop. Completely different product.
+
+## Where agents actually break
+
+Understanding this layer is useful for debugging. When an agent produces wrong or confused output, the failure is usually in the harness, not the model. Specifically:
+
+- The wrong files were loaded into context
+- The right files were there but got pushed out as the window filled
+- A tool result wasn't appended correctly and the model never saw it
+- The loop exited too early before the task was actually done
+- Too much irrelevant content diluted what the model could attend to
+
+Knowing this reframes the debugging question. Instead of "why did the AI get confused," you ask "what was in the context window at the point of failure." That's a much more tractable question.
 
 The harness is most of the product. The model is what makes it work.
