@@ -8,6 +8,7 @@ import Toolbar from './Toolbar';
 import DesktopShortcut, { DesktopShortcutProps } from './DesktopShortcut';
 import { IconName } from '../../assets/icons';
 import Credits from '../applications/Credits';
+import BlogExplorer from '../applications/BlogExplorer';
 
 export interface DesktopProps {}
 
@@ -50,6 +51,12 @@ const APPLICATIONS: {
         name: 'Credits',
         shortcutIcon: 'credits',
         component: Credits,
+    },
+    blog: {
+        key: 'blog',
+        name: 'Blog',
+        shortcutIcon: 'blogIcon',
+        component: BlogExplorer,
     },
 };
 
