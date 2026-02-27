@@ -5,5 +5,75 @@
     "slug": "hello-world",
     "title": "Hello World",
     "topic": "general"
+  },
+  {
+    "year": "2026",
+    "month": "02",
+    "slug": "migrating-from-cra-to-vite",
+    "title": "Migrating from CRA to Vite",
+    "topic": "engineering"
+  },
+  {
+    "year": "2026",
+    "month": "01",
+    "slug": "2026-goals",
+    "title": "2026 Goals",
+    "topic": "general"
+  },
+  {
+    "year": "2025",
+    "month": "11",
+    "slug": "building-a-win95-portfolio",
+    "title": "Building a Win95 Portfolio",
+    "topic": "engineering"
+  },
+  {
+    "year": "2025",
+    "month": "11",
+    "slug": "doom-in-the-browser",
+    "title": "Doom in the Browser",
+    "topic": "engineering"
+  },
+  {
+    "year": "2025",
+    "month": "08",
+    "slug": "on-side-projects",
+    "title": "On Side Projects",
+    "topic": "general"
+  },
+  {
+    "year": "2025",
+    "month": "04",
+    "slug": "react-typescript-tips",
+    "title": "React + TypeScript Tips I Wish I Knew",
+    "topic": "engineering"
+  },
+  {
+    "year": "2025",
+    "month": "01",
+    "slug": "2025-retrospective",
+    "title": "2025 Retrospective",
+    "topic": "general"
+  },
+  {
+    "year": "2024",
+    "month": "09",
+    "slug": "why-i-love-ruby-on-rails",
+    "title": "Why I Still Love Ruby on Rails",
+    "topic": "engineering"
+  },
+  {
+    "year": "2024",
+    "month": "06",
+    "slug": "framer-motion-animations",
+    "title": "Framer Motion: Making Things Move",
+    "topic": "engineering"
+  },
+  {
+    "year": "2024",
+    "month": "03",
+    "slug": "learning-in-public",
+    "title": "Learning in Public",
+    "topic": "general"
   }
 ]
