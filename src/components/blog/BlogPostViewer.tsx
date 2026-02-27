@@ -56,7 +56,17 @@ const md: Components = {
   p: ({ children }) => <div style={mdStyles.p}>{children}</div>,
   ul: ({ children }) => <div style={mdStyles.ul}>{children}</div>,
   ol: ({ children }) => <div style={mdStyles.ol}>{children}</div>,
-  li: ({ children }) => <div style={mdStyles.li}>• {children}</div>,
+  li: ({ children, ...props }) => {
+    const ordered = (props as any).ordered as boolean;
+    const index = (props as any).index as number;
+    const marker = ordered ? `${index + 1}.` : '•';
+    return (
+      <div style={mdStyles.li}>
+        <span style={mdStyles.liMarker}>{marker}</span>
+        <div style={mdStyles.liContent}>{children}</div>
+      </div>
+    );
+  },
   a: ({ href, children }) => <a href={href} style={mdStyles.a} target="_blank" rel="noreferrer">{children}</a>,
   code: ({ className, children }) => {
     const lang = /language-(\w+)/.exec(className || '')?.[1];
@@ -102,7 +112,9 @@ const mdStyles: StyleSheetCSS = {
   p: { ...base, display: 'block', fontSize: 15, marginBottom: 10 },
   ul: { flexDirection: 'column', marginBottom: 10, paddingLeft: 0 },
   ol: { flexDirection: 'column', marginBottom: 10, paddingLeft: 0 },
-  li: { ...base, display: 'block', fontSize: 15, marginBottom: 4 },
+  li: { flexDirection: 'row', alignItems: 'flex-start', fontSize: 15, marginBottom: 4 },
+  liMarker: { flexShrink: 0, marginRight: 6, fontFamily: 'Arial, sans-serif', color: '#000000', lineHeight: 1.6 },
+  liContent: { display: 'block', flex: 1, fontFamily: 'Arial, sans-serif', color: '#000000', lineHeight: 1.6 },
   a: { ...base, fontSize: 15, color: '#0000cc' },
   inlineCode: {
     fontFamily: 'Courier New, monospace',
