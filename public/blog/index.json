@@ -2,13 +2,6 @@
   {
     "year": "2026",
     "month": "02",
-    "slug": "hello-world",
-    "title": "Hello World",
-    "topic": "general"
-  },
-  {
-    "year": "2026",
-    "month": "02",
     "slug": "migrating-from-cra-to-vite",
     "title": "Migrating from CRA to Vite",
     "topic": "engineering"
