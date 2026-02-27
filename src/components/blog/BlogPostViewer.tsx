@@ -1,6 +1,26 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
+import mermaid from 'mermaid';
+
+let mermaidReady = false;
+
+const MermaidBlock: React.FC<{ chart: string }> = ({ chart }) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const id = useRef(`mermaid-${Math.random().toString(36).slice(2)}`);
+
+    useEffect(() => {
+        if (!mermaidReady) {
+            mermaid.initialize({ startOnLoad: false, theme: 'default' });
+            mermaidReady = true;
+        }
+        mermaid.render(id.current, chart).then(({ svg }) => {
+            if (ref.current) ref.current.innerHTML = svg;
+        }).catch(console.error);
+    }, [chart]);
+
+    return <div ref={ref} style={{ marginBottom: 12 }} />;
+};
 
 interface BlogPostViewerProps {
     content: string | null;
@@ -17,8 +37,22 @@ const md: Components = {
     ol: ({ children }) => <div style={mdStyles.ol}>{children}</div>,
     li: ({ children }) => <div style={mdStyles.li}>• {children}</div>,
     a:  ({ href, children }) => <a href={href} style={mdStyles.a} target="_blank" rel="noreferrer">{children}</a>,
-    code: ({ children }) => <code style={mdStyles.inlineCode}>{children}</code>,
-    pre: ({ children }) => <div style={mdStyles.pre}>{children}</div>,
+    code: ({ className, children }) => {
+        const lang = /language-(\w+)/.exec(className || '')?.[1];
+        if (lang === 'mermaid') {
+            return <MermaidBlock chart={String(children).replace(/\n$/, '')} />;
+        }
+        return <code style={mdStyles.inlineCode}>{children}</code>;
+    },
+    pre: ({ children }) => {
+        const child = React.isValidElement(children)
+            ? (children as React.ReactElement<{ className?: string }>)
+            : null;
+        if (child?.props?.className?.includes('language-mermaid')) {
+            return <>{children}</>;
+        }
+        return <div style={mdStyles.pre}>{children}</div>;
+    },
     blockquote: ({ children }) => <div style={mdStyles.blockquote}>{children}</div>,
 };
 

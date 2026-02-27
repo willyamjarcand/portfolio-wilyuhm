@@ -32,6 +32,14 @@ Same model. The harness is doing the heavy lifting.
 
 The way Claude Code's harness actually works is a three-phase loop it runs through for every task:
 
+```mermaid
+flowchart LR
+    A[Gather context] --> B[Take action]
+    B --> C[Verify]
+    C -->|failed| A
+    C -->|passed| D[Done]
+```
+
 **Gather context:** searches the project, reads relevant files, figures out what it's dealing with. No manual setup from me.
 
 **Take action:** edits files, runs commands, whatever the task needs. Each action is a tool call the harness routes to my local system.
