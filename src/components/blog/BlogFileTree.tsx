@@ -43,10 +43,15 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
     return (
         <div style={styles.tree}>
             {years.map((year) => (
-                <div key={year}>
-                    <div style={styles.yearRow} onClick={() => toggleYear(year)}>
-                        <span style={styles.arrow}>{collapsedYears[year] ? '▶' : '▼'}</span>
-                        <span style={styles.yearLabel}>{year}</span>
+                <div key={year} style={styles.section}>
+                    <div style={styles.iconGrid}>
+                        <div style={styles.iconTile} onClick={() => toggleYear(year)}>
+                            <img src={windowExplorerIcon} style={styles.tileIcon} alt="" />
+                            <span style={styles.tileLabel}>{year}</span>
+                            <span style={styles.collapseArrow}>
+                                {collapsedYears[year] ? '▶' : '▼'}
+                            </span>
+                        </div>
                     </div>
                     {!collapsedYears[year] &&
                         Object.keys(tree[year])
@@ -54,50 +59,63 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
                             .map((month) => {
                                 const monthKey = `${year}-${month}`;
                                 return (
-                                    <div key={monthKey} style={styles.monthBlock}>
-                                        <div
-                                            style={styles.monthRow}
-                                            onClick={() => toggleMonth(monthKey)}
-                                        >
-                                            <span style={styles.arrow}>
-                                                {collapsedMonths[monthKey] ? '▶' : '▼'}
-                                            </span>
-                                            <span style={styles.monthLabel}>
-                                                {MONTH_NAMES[month] ?? month}
-                                            </span>
+                                    <div key={monthKey} style={styles.indented}>
+                                        <div style={styles.iconGrid}>
+                                            <div
+                                                style={styles.iconTile}
+                                                onClick={() => toggleMonth(monthKey)}
+                                            >
+                                                <img
+                                                    src={windowExplorerIcon}
+                                                    style={styles.tileIcon}
+                                                    alt=""
+                                                />
+                                                <span style={styles.tileLabel}>
+                                                    {MONTH_NAMES[month] ?? month}
+                                                </span>
+                                                <span style={styles.collapseArrow}>
+                                                    {collapsedMonths[monthKey] ? '▶' : '▼'}
+                                                </span>
+                                            </div>
                                         </div>
                                         {!collapsedMonths[monthKey] && (
-                                            <div style={styles.iconGrid}>
-                                                {tree[year][month].map((post) => {
-                                                    const isSelected =
-                                                        selected?.slug === post.slug &&
-                                                        selected?.year === post.year &&
-                                                        selected?.month === post.month;
-                                                    return (
-                                                        <div
-                                                            key={post.slug}
-                                                            style={Object.assign(
-                                                                {},
-                                                                styles.iconTile,
-                                                                isSelected && styles.iconTileSelected
-                                                            )}
-                                                            onClick={() => onSelect(post)}
-                                                        >
-                                                            <img
-                                                                src={windowExplorerIcon}
-                                                                style={styles.tileIcon}
-                                                                alt=""
-                                                            />
-                                                            <span style={Object.assign(
-                                                                {},
-                                                                styles.tileLabel,
-                                                                isSelected && styles.tileLabelSelected
-                                                            )}>
-                                                                {post.title}
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
+                                            <div style={styles.indented}>
+                                                <div style={styles.iconGrid}>
+                                                    {tree[year][month].map((post) => {
+                                                        const isSelected =
+                                                            selected?.slug === post.slug &&
+                                                            selected?.year === post.year &&
+                                                            selected?.month === post.month;
+                                                        return (
+                                                            <div
+                                                                key={post.slug}
+                                                                style={Object.assign(
+                                                                    {},
+                                                                    styles.iconTile,
+                                                                    isSelected &&
+                                                                        styles.iconTileSelected
+                                                                )}
+                                                                onClick={() => onSelect(post)}
+                                                            >
+                                                                <img
+                                                                    src={windowExplorerIcon}
+                                                                    style={styles.tileIcon}
+                                                                    alt=""
+                                                                />
+                                                                <span
+                                                                    style={Object.assign(
+                                                                        {},
+                                                                        styles.tileLabel,
+                                                                        isSelected &&
+                                                                            styles.tileLabelSelected
+                                                                    )}
+                                                                >
+                                                                    {post.title}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -111,6 +129,8 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
 
 const styles: StyleSheetCSS = {
     tree: {
+        flexDirection: 'column',
+        alignItems: 'flex-start',
         width: 220,
         minWidth: 220,
         height: '100%',
@@ -122,46 +142,26 @@ const styles: StyleSheetCSS = {
         fontFamily: 'Arial, sans-serif',
         fontSize: 12,
     },
-    yearRow: {
-        display: 'flex',
-        alignItems: 'center',
-        cursor: 'pointer',
-        padding: '2px 4px',
-        userSelect: 'none',
-        fontWeight: 'bold',
+    section: {
+        flexDirection: 'column',
+        width: '100%',
     },
-    monthBlock: {
+    indented: {
+        flexDirection: 'column',
         paddingLeft: 12,
-    },
-    monthRow: {
-        display: 'flex',
-        alignItems: 'center',
-        cursor: 'pointer',
-        padding: '2px 4px',
-        userSelect: 'none',
-    },
-    arrow: {
-        fontSize: 8,
-        marginRight: 4,
-        color: '#555',
-    },
-    yearLabel: {
-        fontSize: 12,
-    },
-    monthLabel: {
-        fontSize: 12,
+        width: '100%',
+        boxSizing: 'border-box',
     },
     iconGrid: {
-        display: 'flex',
         flexWrap: 'wrap',
+        alignContent: 'flex-start',
         gap: 4,
-        padding: '4px 4px 4px 16px',
+        padding: '4px 0',
     },
     iconTile: {
-        display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        width: 72,
+        width: 68,
         padding: '4px 2px',
         cursor: 'pointer',
         borderRadius: 2,
@@ -184,6 +184,11 @@ const styles: StyleSheetCSS = {
     },
     tileLabelSelected: {
         color: '#ffffff',
+    },
+    collapseArrow: {
+        fontSize: 8,
+        color: '#555',
+        marginTop: 2,
     },
 };
 
