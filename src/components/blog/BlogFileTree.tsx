@@ -22,6 +22,9 @@ const MONTH_NAMES: Record<string, string> = {
 };
 
 const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelect }) => {
+    const [activeYear, setActiveYear] = useState<string | null>(null);
+    const [activeMonth, setActiveMonth] = useState<string | null>(null);
+
     const tree = manifest.reduce<Record<string, Record<string, PostMeta[]>>>((acc, post) => {
         if (!acc[post.year]) acc[post.year] = {};
         if (!acc[post.year][post.month]) acc[post.year][post.month] = [];
@@ -30,165 +33,185 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
     }, {});
 
     const years = Object.keys(tree).sort((a, b) => Number(b) - Number(a));
+    const months = activeYear
+        ? Object.keys(tree[activeYear]).sort((a, b) => Number(b) - Number(a))
+        : [];
+    const posts =
+        activeYear && activeMonth ? tree[activeYear][activeMonth] ?? [] : [];
 
-    const [collapsedYears, setCollapsedYears] = useState<Record<string, boolean>>({});
-    const [collapsedMonths, setCollapsedMonths] = useState<Record<string, boolean>>({});
+    const handleYearClick = (year: string) => {
+        setActiveYear(year);
+        setActiveMonth(null);
+    };
 
-    const toggleYear = (year: string) =>
-        setCollapsedYears((prev) => ({ ...prev, [year]: !prev[year] }));
-
-    const toggleMonth = (key: string) =>
-        setCollapsedMonths((prev) => ({ ...prev, [key]: !prev[key] }));
+    const handleMonthClick = (month: string) => {
+        setActiveMonth(month);
+    };
 
     return (
-        <div style={styles.tree}>
-            {years.map((year) => (
-                <div key={year} style={styles.section}>
-                    <div style={styles.iconGrid}>
-                        <div style={styles.iconTile} onClick={() => toggleYear(year)}>
-                            <img src={windowExplorerIcon} style={styles.tileIcon} alt="" />
-                            <span style={styles.tileLabel}>{year}</span>
-                            <span style={styles.collapseArrow}>
-                                {collapsedYears[year] ? '▶' : '▼'}
+        <div style={styles.columns}>
+            {/* Column 1 — Years */}
+            <div style={styles.column}>
+                {years.map((year) => (
+                    <div
+                        key={year}
+                        style={Object.assign(
+                            {},
+                            styles.row,
+                            activeYear === year && styles.rowActive
+                        )}
+                        onClick={() => handleYearClick(year)}
+                    >
+                        <img src={windowExplorerIcon} style={styles.rowIcon} alt="" />
+                        <span style={Object.assign(
+                            {},
+                            styles.rowLabel,
+                            activeYear === year && styles.rowLabelActive
+                        )}>
+                            {year}
+                        </span>
+                        <span style={Object.assign(
+                            {},
+                            styles.disclosure,
+                            activeYear === year && styles.disclosureActive
+                        )}>
+                            ›
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            <div style={styles.divider} />
+
+            {/* Column 2 — Months */}
+            <div style={styles.column}>
+                {months.map((month) => (
+                    <div
+                        key={month}
+                        style={Object.assign(
+                            {},
+                            styles.row,
+                            activeMonth === month && styles.rowActive
+                        )}
+                        onClick={() => handleMonthClick(month)}
+                    >
+                        <img src={windowExplorerIcon} style={styles.rowIcon} alt="" />
+                        <span style={Object.assign(
+                            {},
+                            styles.rowLabel,
+                            activeMonth === month && styles.rowLabelActive
+                        )}>
+                            {MONTH_NAMES[month] ?? month}
+                        </span>
+                        <span style={Object.assign(
+                            {},
+                            styles.disclosure,
+                            activeMonth === month && styles.disclosureActive
+                        )}>
+                            ›
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            <div style={styles.divider} />
+
+            {/* Column 3 — Posts */}
+            <div style={styles.column}>
+                {posts.map((post) => {
+                    const isSelected =
+                        selected?.slug === post.slug &&
+                        selected?.year === post.year &&
+                        selected?.month === post.month;
+                    return (
+                        <div
+                            key={post.slug}
+                            style={Object.assign(
+                                {},
+                                styles.row,
+                                isSelected && styles.rowActive
+                            )}
+                            onClick={() => onSelect(post)}
+                        >
+                            <img src={windowExplorerIcon} style={styles.rowIcon} alt="" />
+                            <span style={Object.assign(
+                                {},
+                                styles.rowLabel,
+                                isSelected && styles.rowLabelActive
+                            )}>
+                                {post.title}
                             </span>
                         </div>
-                    </div>
-                    {!collapsedYears[year] &&
-                        Object.keys(tree[year])
-                            .sort((a, b) => Number(b) - Number(a))
-                            .map((month) => {
-                                const monthKey = `${year}-${month}`;
-                                return (
-                                    <div key={monthKey} style={styles.indented}>
-                                        <div style={styles.iconGrid}>
-                                            <div
-                                                style={styles.iconTile}
-                                                onClick={() => toggleMonth(monthKey)}
-                                            >
-                                                <img
-                                                    src={windowExplorerIcon}
-                                                    style={styles.tileIcon}
-                                                    alt=""
-                                                />
-                                                <span style={styles.tileLabel}>
-                                                    {MONTH_NAMES[month] ?? month}
-                                                </span>
-                                                <span style={styles.collapseArrow}>
-                                                    {collapsedMonths[monthKey] ? '▶' : '▼'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        {!collapsedMonths[monthKey] && (
-                                            <div style={styles.indented}>
-                                                <div style={styles.iconGrid}>
-                                                    {tree[year][month].map((post) => {
-                                                        const isSelected =
-                                                            selected?.slug === post.slug &&
-                                                            selected?.year === post.year &&
-                                                            selected?.month === post.month;
-                                                        return (
-                                                            <div
-                                                                key={post.slug}
-                                                                style={Object.assign(
-                                                                    {},
-                                                                    styles.iconTile,
-                                                                    isSelected &&
-                                                                        styles.iconTileSelected
-                                                                )}
-                                                                onClick={() => onSelect(post)}
-                                                            >
-                                                                <img
-                                                                    src={windowExplorerIcon}
-                                                                    style={styles.tileIcon}
-                                                                    alt=""
-                                                                />
-                                                                <span
-                                                                    style={Object.assign(
-                                                                        {},
-                                                                        styles.tileLabel,
-                                                                        isSelected &&
-                                                                            styles.tileLabelSelected
-                                                                    )}
-                                                                >
-                                                                    {post.title}
-                                                                </span>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                </div>
-            ))}
+                    );
+                })}
+            </div>
         </div>
     );
 };
 
 const styles: StyleSheetCSS = {
-    tree: {
-        flexDirection: 'column',
-        alignItems: 'flex-start',
-        width: 220,
-        minWidth: 220,
+    columns: {
+        flexDirection: 'row',
+        width: 420,
+        minWidth: 420,
         height: '100%',
-        borderRight: '1px solid #808080',
-        overflowY: 'auto',
+        borderRight: '2px solid #808080',
         backgroundColor: '#ffffff',
-        padding: 4,
-        boxSizing: 'border-box',
-        fontFamily: 'Arial, sans-serif',
-        fontSize: 12,
+        overflow: 'hidden',
+        flexShrink: 0,
     },
-    section: {
+    column: {
         flexDirection: 'column',
-        width: '100%',
+        flex: 1,
+        height: '100%',
+        overflowY: 'auto',
+        alignItems: 'stretch',
     },
-    indented: {
-        flexDirection: 'column',
-        paddingLeft: 12,
-        width: '100%',
-        boxSizing: 'border-box',
+    divider: {
+        width: 1,
+        height: '100%',
+        backgroundColor: '#c0c0c0',
+        flexShrink: 0,
     },
-    iconGrid: {
-        flexWrap: 'wrap',
-        alignContent: 'flex-start',
-        gap: 4,
-        padding: '4px 0',
-    },
-    iconTile: {
-        flexDirection: 'column',
+    row: {
+        flexDirection: 'row',
         alignItems: 'center',
-        width: 68,
-        padding: '4px 2px',
+        padding: '3px 6px',
         cursor: 'pointer',
-        borderRadius: 2,
+        minHeight: 24,
+        flexShrink: 0,
     },
-    iconTileSelected: {
-        backgroundColor: '#000080',
+    rowActive: {
+        backgroundColor: '#0000aa',
     },
-    tileIcon: {
-        width: 32,
-        height: 32,
+    rowIcon: {
+        width: 16,
+        height: 16,
         imageRendering: 'pixelated',
+        marginRight: 5,
+        flexShrink: 0,
     },
-    tileLabel: {
-        marginTop: 3,
+    rowLabel: {
         fontSize: 11,
-        textAlign: 'center',
-        wordBreak: 'break-word',
-        lineHeight: 1.3,
+        fontFamily: 'Arial, sans-serif',
         color: '#000000',
+        flex: 1,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
     },
-    tileLabelSelected: {
+    rowLabelActive: {
         color: '#ffffff',
     },
-    collapseArrow: {
-        fontSize: 8,
-        color: '#555',
-        marginTop: 2,
+    disclosure: {
+        fontSize: 14,
+        color: '#555555',
+        marginLeft: 4,
+        flexShrink: 0,
+        lineHeight: 1,
+    },
+    disclosureActive: {
+        color: '#ffffff',
     },
 };
 
