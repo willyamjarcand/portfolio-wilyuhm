@@ -40,17 +40,17 @@ const base = {
 };
 
 const mdStyles: StyleSheetCSS = {
-    h1: { ...base, fontSize: 22, fontWeight: 'bold', marginBottom: 12, marginTop: 8 },
-    h2: { ...base, fontSize: 17, fontWeight: 'bold', marginBottom: 8, marginTop: 16 },
-    h3: { ...base, fontSize: 14, fontWeight: 'bold', marginBottom: 6, marginTop: 12 },
-    p:  { ...base, fontSize: 13, marginBottom: 10 },
+    h1: { ...base, fontSize: 26, fontWeight: 'bold', marginBottom: 12, marginTop: 8 },
+    h2: { ...base, fontSize: 20, fontWeight: 'bold', marginBottom: 8, marginTop: 16 },
+    h3: { ...base, fontSize: 17, fontWeight: 'bold', marginBottom: 6, marginTop: 12 },
+    p:  { ...base, fontSize: 15, marginBottom: 10 },
     ul: { flexDirection: 'column', marginBottom: 10, paddingLeft: 0 },
     ol: { flexDirection: 'column', marginBottom: 10, paddingLeft: 0 },
-    li: { ...base, fontSize: 13, marginBottom: 4 },
-    a:  { ...base, fontSize: 13, color: '#0000cc' },
+    li: { ...base, fontSize: 15, marginBottom: 4 },
+    a:  { ...base, fontSize: 15, color: '#0000cc' },
     inlineCode: {
         fontFamily: 'Courier New, monospace',
-        fontSize: 12,
+        fontSize: 14,
         backgroundColor: '#f0f0f0',
         padding: '1px 4px',
         borderRadius: 2,
@@ -58,7 +58,7 @@ const mdStyles: StyleSheetCSS = {
     pre: {
         flexDirection: 'column',
         fontFamily: 'Courier New, monospace',
-        fontSize: 12,
+        fontSize: 14,
         backgroundColor: '#f0f0f0',
         padding: 12,
         marginBottom: 10,
