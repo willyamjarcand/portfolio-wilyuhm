@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import windowExplorerIcon from '../../assets/icons/windowExplorerIcon.png';
 
 export interface PostMeta {
     year: string;
@@ -65,26 +66,40 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
                                                 {MONTH_NAMES[month] ?? month}
                                             </span>
                                         </div>
-                                        {!collapsedMonths[monthKey] &&
-                                            tree[year][month].map((post) => {
-                                                const isSelected =
-                                                    selected?.slug === post.slug &&
-                                                    selected?.year === post.year &&
-                                                    selected?.month === post.month;
-                                                return (
-                                                    <div
-                                                        key={post.slug}
-                                                        style={Object.assign(
-                                                            {},
-                                                            styles.postRow,
-                                                            isSelected && styles.postRowSelected
-                                                        )}
-                                                        onClick={() => onSelect(post)}
-                                                    >
-                                                        {post.title}
-                                                    </div>
-                                                );
-                                            })}
+                                        {!collapsedMonths[monthKey] && (
+                                            <div style={styles.iconGrid}>
+                                                {tree[year][month].map((post) => {
+                                                    const isSelected =
+                                                        selected?.slug === post.slug &&
+                                                        selected?.year === post.year &&
+                                                        selected?.month === post.month;
+                                                    return (
+                                                        <div
+                                                            key={post.slug}
+                                                            style={Object.assign(
+                                                                {},
+                                                                styles.iconTile,
+                                                                isSelected && styles.iconTileSelected
+                                                            )}
+                                                            onClick={() => onSelect(post)}
+                                                        >
+                                                            <img
+                                                                src={windowExplorerIcon}
+                                                                style={styles.tileIcon}
+                                                                alt=""
+                                                            />
+                                                            <span style={Object.assign(
+                                                                {},
+                                                                styles.tileLabel,
+                                                                isSelected && styles.tileLabelSelected
+                                                            )}>
+                                                                {post.title}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -136,16 +151,38 @@ const styles: StyleSheetCSS = {
     monthLabel: {
         fontSize: 12,
     },
-    postRow: {
-        padding: '3px 4px 3px 20px',
-        cursor: 'pointer',
-        fontSize: 12,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
+    iconGrid: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 4,
+        padding: '4px 4px 4px 16px',
     },
-    postRowSelected: {
+    iconTile: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: 72,
+        padding: '4px 2px',
+        cursor: 'pointer',
+        borderRadius: 2,
+    },
+    iconTileSelected: {
         backgroundColor: '#000080',
+    },
+    tileIcon: {
+        width: 32,
+        height: 32,
+        imageRendering: 'pixelated',
+    },
+    tileLabel: {
+        marginTop: 3,
+        fontSize: 11,
+        textAlign: 'center',
+        wordBreak: 'break-word',
+        lineHeight: 1.3,
+        color: '#000000',
+    },
+    tileLabelSelected: {
         color: '#ffffff',
     },
 };
