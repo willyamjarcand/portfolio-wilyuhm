@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import windowExplorerIcon from '../../assets/icons/windowExplorerIcon.png';
+import directoryClosed from '../../assets/icons/directory_closed.png';
+import directoryOpen from '../../assets/icons/directory_open_file_mydocs.png';
+import fileIcon from '../../assets/icons/file.png';
 
 export interface PostMeta {
     year: string;
@@ -62,7 +64,11 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
                         )}
                         onClick={() => handleYearClick(year)}
                     >
-                        <img src={windowExplorerIcon} style={styles.rowIcon} alt="" />
+                        <img
+                            src={activeYear === year ? directoryOpen : directoryClosed}
+                            style={styles.rowIcon}
+                            alt=""
+                        />
                         <span style={Object.assign(
                             {},
                             styles.rowLabel,
@@ -95,7 +101,11 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
                         )}
                         onClick={() => handleMonthClick(month)}
                     >
-                        <img src={windowExplorerIcon} style={styles.rowIcon} alt="" />
+                        <img
+                            src={activeMonth === month ? directoryOpen : directoryClosed}
+                            style={styles.rowIcon}
+                            alt=""
+                        />
                         <span style={Object.assign(
                             {},
                             styles.rowLabel,
@@ -133,7 +143,7 @@ const BlogFileTree: React.FC<BlogFileTreeProps> = ({ manifest, selected, onSelec
                             )}
                             onClick={() => onSelect(post)}
                         >
-                            <img src={windowExplorerIcon} style={styles.rowIcon} alt="" />
+                            <img src={fileIcon} style={styles.rowIcon} alt="" />
                             <span style={Object.assign(
                                 {},
                                 styles.rowLabel,

@@ -20,6 +20,9 @@ import windowsStartIcon from './windowsStartIcon.png';
 import scrabbleIcon from './scrabbleIcon.png';
 import close from './close.png';
 import blogIcon from './blogIcon.png';
+import directoryClosed from './directory_closed.png';
+import directoryOpen from './directory_open_file_mydocs.png';
+import fileIcon from './file.png';
 
 const icons = {
     windowResize: windowResize,
@@ -42,6 +45,9 @@ const icons = {
     trailIcon: trailIcon,
     doom2Icon: doom2Icon,
     blogIcon: blogIcon,
+    directoryClosed: directoryClosed,
+    directoryOpen: directoryOpen,
+    fileIcon: fileIcon,
 };
 
 export type IconName = keyof typeof icons;
