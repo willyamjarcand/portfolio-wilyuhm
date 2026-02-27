@@ -107,6 +107,26 @@ Two things follow directly from this.
 
 This is the foundation everything else builds on.
 
+## Why the same model behaves so differently
+
+If the model is just predicting the next token, why does typing "the cat sat on the" into Gemini give you a one-word completion, while "what can a cat sit on?" gives you three paragraphs?
+
+The base model trained on raw text will complete "the cat sat on the" with "mat" because that's the dominant pattern across its training corpus. Billions of texts contain that phrase, and "mat" follows it most often.
+
+But when you type into a chat interface, your message isn't passed to the model as raw text. It gets wrapped in a chat template first:
+
+```
+<system>You are a helpful assistant.</system>
+<user>what can a cat sit on?</user>
+<assistant>
+```
+
+Now the model is predicting what tokens a helpful assistant would produce next. It knows this because of instruction tuning: after pretraining, the model is fine-tuned on question-answer pairs and then trained with human feedback to reinforce helpful responses. That training shapes the probability distribution for assistant-style inputs. Questions that look like "what can X do?" were consistently followed by long explanatory responses in the fine-tuning data, so that's the high-probability completion in that context.
+
+Same function. Same weights. Completely different output because the token sequence going in is structured differently. The model isn't "deciding" to give a longer answer. The probability distribution just looks different when the input looks like a question inside a chat template vs. a sentence fragment.
+
+This is worth keeping in mind when you read the rest of this post. When I say "the model does X," I always mean: the token sequence going in makes X the high-probability completion.
+
 ## Tool calls are structured text
 
 So how does a model "call a tool"? It doesn't. Not directly.
