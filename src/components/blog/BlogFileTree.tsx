@@ -137,7 +137,6 @@ const styles: StyleSheetCSS = {
         fontSize: 12,
     },
     postRow: {
-        paddingLeft: 20,
         padding: '3px 4px 3px 20px',
         cursor: 'pointer',
         fontSize: 12,
