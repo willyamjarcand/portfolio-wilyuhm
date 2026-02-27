@@ -7,16 +7,29 @@ let mermaidReady = false;
 
 const MermaidBlock: React.FC<{ chart: string }> = ({ chart }) => {
     const ref = useRef<HTMLDivElement>(null);
-    const id = useRef(`mermaid-${Math.random().toString(36).slice(2)}`);
 
     useEffect(() => {
         if (!mermaidReady) {
             mermaid.initialize({ startOnLoad: false, theme: 'default' });
             mermaidReady = true;
         }
-        mermaid.render(id.current, chart).then(({ svg }) => {
-            if (ref.current) ref.current.innerHTML = svg;
+
+        // Fresh id per effect run — prevents StrictMode double-invoke from
+        // hitting a duplicate id in the DOM (mermaid looks up by id).
+        const id = `mermaid-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        let cancelled = false;
+
+        if (ref.current) ref.current.innerHTML = '';
+
+        mermaid.render(id, chart).then(({ svg }) => {
+            if (!cancelled && ref.current) ref.current.innerHTML = svg;
         }).catch(console.error);
+
+        return () => {
+            cancelled = true;
+            document.getElementById(`d${id}`)?.remove();
+            if (ref.current) ref.current.innerHTML = '';
+        };
     }, [chart]);
 
     return <div ref={ref} style={{ marginBottom: 12 }} />;
