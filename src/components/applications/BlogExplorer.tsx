@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Window from '../os/Window';
 import BlogFileTree, { PostMeta } from '../blog/BlogFileTree';
 import BlogPostViewer from '../blog/BlogPostViewer';
 import useInitialWindowSize from '../../hooks/useInitialWindowSize';
 
-export interface BlogExplorerProps extends WindowAppProps {}
-
-const BlogExplorer: React.FC<BlogExplorerProps> = (props) => {
+const BlogExplorer: React.FC<WindowAppProps> = (props) => {
     const { initWidth, initHeight } = useInitialWindowSize({ margin: 100 });
 
     const [manifest, setManifest] = useState<PostMeta[]>([]);
@@ -16,6 +14,7 @@ const BlogExplorer: React.FC<BlogExplorerProps> = (props) => {
     const [postContent, setPostContent] = useState<string | null>(null);
     const [postLoading, setPostLoading] = useState(false);
     const [postError, setPostError] = useState<string | null>(null);
+    const currentSlug = useRef<string | null>(null);
 
     useEffect(() => {
         fetch('/blog/index.json')
@@ -28,18 +27,26 @@ const BlogExplorer: React.FC<BlogExplorerProps> = (props) => {
     }, []);
 
     const handleSelect = (post: PostMeta) => {
+        const key = `${post.year}/${post.month}/${post.slug}`;
+        currentSlug.current = key;
         setSelected(post);
         setPostContent(null);
         setPostError(null);
         setPostLoading(true);
-        fetch(`/blog/${post.year}/${post.month}/${post.slug}.md`)
+        fetch(`/blog/${key}.md`)
             .then((r) => {
                 if (!r.ok) throw new Error('Failed to load post');
                 return r.text();
             })
-            .then((text) => setPostContent(text))
-            .catch((e) => setPostError(e.message))
-            .finally(() => setPostLoading(false));
+            .then((text) => {
+                if (currentSlug.current === key) setPostContent(text);
+            })
+            .catch((e) => {
+                if (currentSlug.current === key) setPostError(e.message);
+            })
+            .finally(() => {
+                if (currentSlug.current === key) setPostLoading(false);
+            });
     };
 
     return (
