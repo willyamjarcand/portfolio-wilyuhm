@@ -1,6 +1,13 @@
 [
   {
     "year": "2026",
+    "month": "07",
+    "slug": "the-cache-that-served-the-wrong-image",
+    "title": "The Cache That Served the Wrong Image",
+    "topic": "engineering"
+  },
+  {
+    "year": "2026",
     "month": "02",
     "slug": "ai-harnesses-explained",
     "title": "AI Harnesses: The Layer That Makes Agents Actually Work",
