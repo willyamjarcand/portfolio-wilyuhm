@@ -1,80 +1,44 @@
-# The Cache That Served the Wrong Image
+# The Image Cache Bug I Couldn't Reproduce
 
-A handful of users on our Android app reported that a screen was showing the wrong illustration. Where a friendly branded graphic should have been, they got the *error* illustration — a sad little coin with a frown. Nothing was actually broken on that screen. The image was just wrong.
+A few users saw the wrong picture on one screen. Where an illustration should have been, they got our generic error graphic — a coin with a sad face. Nothing was broken. The pixels were just wrong. And I couldn't reproduce it on my own phone.
 
-I couldn't reproduce it. Same app version, same build, same screen — I got the correct image every time. That's the worst kind of bug: real, reported, and invisible to you.
+It came down to one line in an open-source library.
 
-This is the story of chasing it down to a single line in an open-source library, and the surprisingly deep pile of concepts underneath it.
+## Three facts
 
-## The three clues
+- Only some users hit it.
+- App updates didn't fix it.
+- Clearing the app cache did.
 
-Three facts shaped the whole investigation:
+Clearing the cache fixes it, so it's a cache problem. An app update should clear that kind of cache but didn't, so it's a stubborn one. And it's per-user, not in the code — I read the whole path and the screen asks for the right image every time.
 
-1. **Only some users saw it.** Not everyone on that version — a subset.
-2. **It survived app updates.** Users updated the app and still saw the wrong image.
-3. **Clearing the app cache fixed it.**
+## Android caches images by a number
 
-Clue 3 says it's a caching problem. Clue 2 says it's a *stubborn* caching problem — one that a new app build should have wiped but didn't. Clue 1 says it depends on some per-device history, not the code itself.
+We use expo-image, which runs on Glide underneath. Glide decodes an image once and files the result under a key. For a bundled image — one shipped inside the app — that key is the Android resource id. An integer like `2131165890`.
 
-The code, for what it's worth, was innocent. The screen asked for image A. Every layer I could read passed image A along faithfully. And yet the bytes coming back were image B.
+The catch: those ids are handed out at build time and aren't stable across builds. Add or remove a resource and the whole table gets renumbered. The id that meant "error image" in one build can mean "cash illustration" in the next.
 
-## How images get cached on Android
+## What changed
 
-The app uses `expo-image`, which on Android sits on top of Glide, a mature image-loading and caching library. When you render an image, Glide decodes it once and files the result in a cache so the next render is instant. To find things again, it needs a **key**.
+Right before the reports, we moved that illustration from being served over a CDN to being bundled in the app.
 
-For a bundled image — one shipped inside the app binary — that key is essentially the image's **numeric Android resource ID**. Every drawable compiled into an Android app gets an integer ID like `2131165890`.
+That's the whole trigger. A CDN image is cached by its URL — unique, can't collide. A bundled image is cached by that unstable integer. Bundling it dropped it into the filing system with reused ticket numbers, and it landed on an id that used to belong to the error image. The old error bytes were still sitting in the cache under that id.
 
-Here's the landmine: **those IDs are assigned at build time and are not stable across builds.** Add or remove a resource and the compiler renumbers the table. The ID that pointed at image B in one build can point at image A in the next.
-
-Think of a coat check that hands out numbered tickets, then renovates and renumbers every hook overnight. You come back with ticket #847 expecting your coat, and get whatever is now hanging on hook #847.
-
-## The trigger
-
-Shortly before the reports, we'd moved the affected illustration from being **served over a CDN** to being **bundled into the app**.
-
-That move matters more than it sounds. A CDN image is fetched by URL, and Glide caches it under that URL — a unique, content-addressed string that can never collide with anything. A bundled image is fetched by numeric resource ID — the unstable kind.
-
-So the switch dropped the image out of the collision-proof filing system and into the one with reused ticket numbers. When it got bundled, the resource table was recompiled and the IDs shifted. Our image inherited an ID that, on users' *previously installed* build, had belonged to the error illustration. That error image's bytes were still sitting in Glide's disk cache under that ID — and nothing had invalidated them. Request the new image, get the old error bytes. Sad coin.
-
-Only users who had the *previous* build installed had that poisoned cache entry, which is exactly why fresh installs — and my device — were fine.
-
-## Why the app update didn't save anyone
-
-Glide's maintainers know about the unstable-ID problem, and so do the `expo-image` authors. The intended defense is to stamp every cached resource with the app's version. When the version changes, the stamp changes, and stale entries are ignored. There's even a comment in the source spelling out the exact failure it prevents:
-
-```kotlin
-// Every local resource (drawable) in Android has its own unique numeric id, which are
-// generated at build time. Although these ids are unique, they are not guaranteed unique
-// across builds. ... To make sure the cache does not return the wrong image, we should
-// clear the cache when the application version changes.
-apply(RequestOptions.signatureOf(ApplicationVersionSignature.obtain(context)))
+```mermaid
+flowchart TD
+    A["Old build: error image gets resource id 847"]
+    A --> B["Glide caches the error bytes under id 847"]
+    B -->|"app update: bundling reshuffles ids, cache entry survives"| C["New build: cash illustration gets resource id 847"]
+    C --> D["Glide sees id 847 is already cached"]
+    D --> E["Hands back the stale error image"]
 ```
 
-The comment is correct. The bug is one line up:
+Only people who'd installed the previous build had the poisoned entry. Fresh installs — and my phone — were fine.
 
-```kotlin
-.customize(`when` = isResourceUri()) {   // only the "android.resource://" scheme
-```
+## Why the update didn't help
 
-`isResourceUri()` only matches URIs with the `android.resource://` scheme. But React Native's bundled drawables resolve to a *different* scheme — `res:/` — hardcoded in React Native itself. `expo-image` even handles `res:/` a few lines earlier, converting it so Glide can load it. It just forgot to apply the version stamp to that same path.
+Glide knows resource ids aren't stable, so expo-image stamps each cached resource with the app version to force a refresh when the version changes. Good idea. But the stamp only got applied to one URI scheme, `android.resource://`, and React Native's bundled images use a different one, `res:/`. expo-image even converts `res:/` a few lines earlier so Glide can load it — it just skipped the stamp on that path.
 
-So for every React Native bundled image, the one guard designed to prevent exactly this bug was **dead code**. It looked correct. It compiled. It did nothing.
+So the guard was there, commented, shipped, and doing nothing for the exact case it was written for. Fixed in expo-image 56 by stamping both schemes. Our stopgap was to skip the disk cache for bundled images entirely, which dodges the whole thing regardless of version.
 
-## The fix
-
-Upstream, the fix is a single added condition:
-
-```kotlin
-.customize(`when` = isResourceUri() || isLocalResourceUri()) {
-```
-
-That's it. Stamp the `res:/` scheme too. It shipped in `expo-image` 56.0.0. Our short-term mitigation was to tell the component to skip the disk cache entirely for bundled images — no stale entry, no collision, independent of the library version.
-
-## What I took away
-
-- **Flipping an asset from remote to bundled isn't free.** It changes how the platform caches it — from collision-proof URLs to unstable numeric IDs. "Just bundle it" quietly changed the failure surface.
-- **Content addressing is a feature.** The CDN version couldn't have this bug because its cache key *was* its content. The moment the key became a reused integer, the door opened.
-- **A guard that looks right can still be doing nothing.** The version-stamp logic was written, commented, and shipped — but gated on a scheme the real inputs never used. Tests pass, code reviews pass, and the protection silently covers zero of the cases that need it.
-- **"I can't reproduce it" is a clue, not a dead end.** It meant the bug lived in per-device history, which pointed straight at the cache.
-
-The best bugs teach you about a layer you thought you understood. I knew what an image cache was. I did not, until this week, know that it was keyed on an integer that changes every time you rebuild.
+Two things stuck. A content-addressed key can't have this bug — the CDN version was immune because the key *was* the content. And a guard can pass review, compile, and protect nothing if it watches the wrong input.
